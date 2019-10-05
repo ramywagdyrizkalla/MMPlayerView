@@ -616,7 +616,7 @@ extension MMPlayerLayer {
             }
         })
         
-        videoRectObservation = self.observe(\.videoRect, options: [.new, .old]) { [weak self] (player, change) in
+        videoRectObservation = observe(\.videoRect) { [weak self] (player, change) in
             if change.newValue != change.oldValue {
                 self?.updateCoverConstraint()
             }
@@ -660,24 +660,31 @@ extension MMPlayerLayer {
     }
     
     private func removeAllObserver() {
-        if let observer = videoRectObservation {
-            observer.invalidate()
-            self.removeObserver(observer, forKeyPath: "videoRect")
-            self.videoRectObservation = nil
-        }
-        videoRectObservation = nil
-        boundsObservation = nil
-        frameObservation = nil
-        mutedObservation = nil
-        rateObservation = nil
-        self.player?.replaceCurrentItem(with: nil)
-        self.player?.pause()
+        invalidateObservations()
+        player?.replaceCurrentItem(with: nil)
+        player?.pause()
         NotificationCenter.default.removeObserver(self)
         coverView?.removeObserver?()
         if let t = timeObserver {
             self.player?.removeTimeObserver(t)
             timeObserver = nil
         }
+    }
+    
+    private func invalidateObservations() {
+        if let observer = videoRectObservation {
+            observer.invalidate()
+            videoRectObservation = nil
+        }
+
+        boundsObservation?.invalidate()
+        frameObservation?.invalidate()
+        mutedObservation?.invalidate()
+        rateObservation?.invalidate()
+        boundsObservation = nil
+        frameObservation = nil
+        mutedObservation = nil
+        rateObservation = nil
     }
 
     private func convertItemStatus() -> MMPlayerLayer.PlayStatus {

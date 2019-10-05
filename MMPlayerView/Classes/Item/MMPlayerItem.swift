@@ -27,13 +27,13 @@ class MMPlayerItem: AVPlayerItem {
     }
     
     func setup() {
-        statusObservation = self.observe(\.status, changeHandler: { [weak self] (item, _) in
+        statusObservation = observe(\.status, changeHandler: { [weak self] (item, _) in
             self?.delegate?.status(change: item.status)
         })
-        keepUpObservation = self.observe(\.isPlaybackLikelyToKeepUp, changeHandler: { [weak self] (item, change) in
+        keepUpObservation = observe(\.isPlaybackLikelyToKeepUp, changeHandler: { [weak self] (item, change) in
             self?.delegate?.isPlaybackKeepUp(isKeepUp: item.isPlaybackLikelyToKeepUp)
         })
-        emptyObservation = self.observe(\.isPlaybackBufferEmpty, changeHandler: { [weak self] (item, change) in
+        emptyObservation = observe(\.isPlaybackBufferEmpty, changeHandler: { [weak self] (item, change) in
             self?.delegate?.isPlaybackEmpty(isEmpty: item.isPlaybackBufferEmpty)
         })
     }
@@ -41,17 +41,14 @@ class MMPlayerItem: AVPlayerItem {
     deinit {
         if let observer = statusObservation {
             observer.invalidate()
-            self.removeObserver(observer, forKeyPath: "status")
             self.statusObservation = nil
         }
         if let observer = keepUpObservation {
             observer.invalidate()
-            self.removeObserver(observer, forKeyPath: "playbackLikelyToKeepUp")
             self.keepUpObservation = nil
         }
         if let observer = emptyObservation {
             observer.invalidate()
-            self.removeObserver(observer, forKeyPath: "playbackBufferEmpty")
             self.emptyObservation = nil
         }
     }
