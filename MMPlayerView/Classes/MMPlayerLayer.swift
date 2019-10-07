@@ -288,7 +288,7 @@ public class MMPlayerLayer: AVPlayerLayer {
         }
     }
     
-    private lazy var  bgView: UIView = {
+    private lazy var bgView: UIView = {
         let v = UIView()
         v.translatesAutoresizingMaskIntoConstraints = false
         v.addSubview(self.thumbImageView)
@@ -332,7 +332,6 @@ public class MMPlayerLayer: AVPlayerLayer {
     private var isInitLayer = false
     private var frameObservation: NSKeyValueObservation?
     private var boundsObservation: NSKeyValueObservation?
-    private var videoRectObservation: NSKeyValueObservation?
     private var mutedObservation: NSKeyValueObservation?
     private var rateObservation: NSKeyValueObservation?
     private var isCoverShow = false
@@ -616,11 +615,7 @@ extension MMPlayerLayer {
             }
         })
         
-        videoRectObservation = observe(\.videoRect) { [weak self] (player, change) in
-            if change.newValue != change.oldValue {
-                self?.updateCoverConstraint()
-            }
-        }
+        addObserver(self, forKeyPath: "videoRect", options: [.new, .old], context: nil)
 
         frameObservation = bgView.observe(\.frame, options: [.new, .old], changeHandler: { [weak self] (view, change) in
             if change.newValue != change.oldValue, change.newValue != .zero {
@@ -659,6 +654,20 @@ extension MMPlayerLayer {
         })
     }
     
+    override public func observeValue(forKeyPath keyPath: String?, of object: Any?, change: [NSKeyValueChangeKey : Any]?, context: UnsafeMutableRawPointer?) {
+        switch keyPath {
+        case "videoRect":
+            let new = change?[.newKey] as? CGRect ?? .zero
+            let old = change?[.oldKey] as? CGRect ?? .zero
+            if new != old {
+                self.updateCoverConstraint()
+            }
+            
+        default:
+            super.observeValue(forKeyPath: keyPath, of: object, change: change, context: context)
+        }
+    }
+    
     private func removeAllObserver() {
         invalidateObservations()
         player?.replaceCurrentItem(with: nil)
@@ -672,11 +681,7 @@ extension MMPlayerLayer {
     }
     
     private func invalidateObservations() {
-        if let observer = videoRectObservation {
-            observer.invalidate()
-            videoRectObservation = nil
-        }
-
+        removeObserver(self, forKeyPath: "videoRect")
         boundsObservation?.invalidate()
         frameObservation?.invalidate()
         mutedObservation?.invalidate()
